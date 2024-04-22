@@ -1,0 +1,44 @@
+---
+- name: Run Laravel setup script
+  hosts: ansible_node1
+
+  tasks:
+    - name: Transfer setup script to remote server
+      tags: copy
+      copy:
+        src: deploy-laravel-app.sh
+        dest: /home/vagrant/deploy-laravel-app.sh
+        mode: 0755
+
+    - name: Execute setup script
+      tags: execute
+      shell: /home/vagrant/deploy-laravel-app.sh
+
+    - name: Check Laravel application accessibility
+      tags: access
+      uri:
+        url: "{{ server_url }}"
+        status_code: 200
+        timeout: 10
+      register: response
+      ignore_errors: yes
+
+    - name: Print Response 0f Laravel Application Accessibility 
+      tags: access,print
+      debug:
+         msg: "Status: {{ response.status }} - URL: {{ response.url }}"
+
+
+- name: Setup Cron Job To Check Server Uptime
+  hosts: ansible_node1
+
+  tasks:
+    - name: Create Cron Job and output server uptime every 12:00am
+      tags: uptime
+      cron:
+        name: "Output server uptime to log"
+        minute: '0'
+        hour: '0'
+        job: /usr/bin/uptime >> /var/log/server_uptime.log
+        state: present
+
