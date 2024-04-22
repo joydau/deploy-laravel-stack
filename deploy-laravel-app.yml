@@ -1,9 +1,9 @@
---
+---
 # Set up a Laravel application on a specified host and configure cron job for checking server uptime.
 
 - name: Run Laravel setup script
   hosts: ansible_node1
-  become: yes # Assuming privilege escalation is required for these operations.
+  become: yes
   tasks:
     - name: Transfer setup script to remote server
       tags: copy
@@ -50,3 +50,4 @@
         job: "/usr/bin/uptime >> /var/log/server_uptime.log"
         state: present
       # Sets up the cron job.
+
