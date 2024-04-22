@@ -1,44 +1,52 @@
----
+--
+# Set up a Laravel application on a specified host and configure cron job for checking server uptime.
+
 - name: Run Laravel setup script
   hosts: ansible_node1
-
+  become: yes # Assuming privilege escalation is required for these operations.
   tasks:
     - name: Transfer setup script to remote server
       tags: copy
       copy:
-        src: deploy-laravel-app.sh
-        dest: /home/vagrant/deploy-laravel-app.sh
+        src: laravel.sh
+        dest: /home/vagrant/laravel.sh
         mode: 0755
+      # Ensure setup script is executable after being transferred.
 
     - name: Execute setup script
       tags: execute
-      shell: /home/vagrant/deploy-laravel-app.sh
+      shell: /home/vagrant/laravel.sh
+      become: yes
+      # Executes the Laravel setup script.
 
     - name: Check Laravel application accessibility
       tags: access
       uri:
         url: "{{ server_url }}"
+        method: GET
+        return_content: no
         status_code: 200
         timeout: 10
       register: response
       ignore_errors: yes
+      # Access the Laravel application, expecting a HTTP 200 status code.
 
-    - name: Print Response 0f Laravel Application Accessibility 
-      tags: access,print
+    - name: Print response of Laravel application accessibility
+      tags: access, print
       debug:
-         msg: "Status: {{ response.status }} - URL: {{ response.url }}"
-
+        msg: "Status: {{ response.status }} - URL: {{ response.url }}"
+      # Outputs the status and URL from the previous check.
 
 - name: Setup Cron Job To Check Server Uptime
   hosts: ansible_node1
-
+  become: yes
   tasks:
-    - name: Create Cron Job and output server uptime every 12:00am
+    - name: Create cron job to output server uptime every 12:00am
       tags: uptime
       cron:
         name: "Output server uptime to log"
         minute: '0'
         hour: '0'
-        job: /usr/bin/uptime >> /var/log/server_uptime.log
+        job: "/usr/bin/uptime >> /var/log/server_uptime.log"
         state: present
-
+      # Sets up the cron job.
